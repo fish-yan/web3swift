@@ -72,7 +72,7 @@ public class HDNode {
 
     public convenience init?(_ serializedString: String, version: HDversion = HDversion()) {
         let data = Data(Base58.bytesFromBase58(serializedString))
-        self.init(data)
+        self.init(data, version: version)
     }
 
     public init?(_ data: Data, version: HDversion = HDversion()) {
