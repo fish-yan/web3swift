@@ -10,6 +10,16 @@ import XCTest
 @testable import web3swift
 
 final class BIP39Tests: XCTestCase {
+    
+    func testGenerateMnemonic() throws {
+        var mnemonics = [String]()
+        for _ in 0..<100 {
+            let mnemonic = try BIP39.generateMnemonics(entropy: 128)
+            mnemonics.append(mnemonic.joined(separator: " "))
+        }
+        print(mnemonics)
+        XCTAssert(mnemonics.count == 100)
+    }
 
     func testBIP39() throws {
         var entropy = Data.fromHex("00000000000000000000000000000000")!

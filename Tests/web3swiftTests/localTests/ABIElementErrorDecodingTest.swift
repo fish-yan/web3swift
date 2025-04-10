@@ -65,7 +65,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
         XCTAssertTrue(emptyFunction.decodeErrorResponse(Data()) == nil)
     }
 
-    func testDecodeEmptyErrorOnOneOutputFunction() {
+    func testDecodeEmptyErrorOnOneOutputFunction() throws {
         guard let errorData = oneOutputFunction.decodeErrorResponse(Data()) else {
             XCTFail("Empty Data must be decoded as a `revert()` or `require(false)` call if function used to decode it has at least one output parameter.")
             return
@@ -74,7 +74,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
         XCTAssertEqual(errorData["_success"] as? Bool, false)
         XCTAssertNotNil(errorData["_failureReason"] as? String)
 
-        let decodedOutput = oneOutputFunction.decodeReturnData(Data())
+        let decodedOutput = try oneOutputFunction.decodeReturnData(Data())
 
         XCTAssertEqual(errorData["_success"] as? Bool, decodedOutput["_success"] as? Bool)
         XCTAssertEqual(errorData["_failureReason"] as? String, decodedOutput["_failureReason"] as? String)
@@ -82,7 +82,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
 
     /// Data is decoded as a call of `revert` or `require` with a message no matter the number of outputs configured in the ``ABI/Element/Function``.
     /// `revert(message)` and `require(false,message)`return at least 128 bytes. We cannot differentiate between `require` or `revert`.
-    func testDecodeDefaultErrorWithMessage() {
+    func testDecodeDefaultErrorWithMessage() throws {
         /// 08c379a0 - Error(string) function selector
         /// 0000000000000000000000000000000000000000000000000000000000000020 - Data offset
         /// 000000000000000000000000000000000000000000000000000000000000001a - Message length
@@ -99,7 +99,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
         XCTAssertEqual(errorData["_errorMessage"] as? String, "Not enough Ether provided.")
         XCTAssertNotNil(errorData["_failureReason"] as? String)
 
-        let decodedOutput = oneOutputFunction.decodeReturnData(errorResponse)
+        let decodedOutput = try oneOutputFunction.decodeReturnData(errorResponse)
 
         XCTAssertEqual(errorData["_success"] as? Bool, decodedOutput["_success"] as? Bool)
         XCTAssertEqual(errorData["_failureReason"] as? String, decodedOutput["_failureReason"] as? String)
@@ -109,7 +109,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
     }
 
     /// Data is decoded as a call of `revert Unauthorized()`. Decoded only if custom error ABI is given.
-    func testDecodeRevertWithCustomError() {
+    func testDecodeRevertWithCustomError() throws {
         /// 82b42900 - Unauthorized() function selector
         /// 00000000000000000000000000000000000000000000000000000000 - padding bytes
         let errorResponse = Data.fromHex("82b4290000000000000000000000000000000000000000000000000000000000")!
@@ -123,7 +123,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
         XCTAssertEqual(errorData["_abortedByRevertOrRequire"] as? Bool, true)
         XCTAssertEqual(errorData["_error"] as? String, "Unauthorized()")
 
-        let decodedOutput = oneOutputFunction.decodeReturnData(errorResponse, errors: errors)
+        let decodedOutput = try oneOutputFunction.decodeReturnData(errorResponse)
 
         XCTAssertEqual(errorData["_success"] as? Bool, decodedOutput["_success"] as? Bool)
         XCTAssertEqual(errorData["_abortedByRevertOrRequire"] as? Bool, decodedOutput["_abortedByRevertOrRequire"] as? Bool)
@@ -132,7 +132,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
 
     /// Data is decoded as a call of `revert Unauthorized()`. Decoded only if custom error ABI is given.
     /// Trying to decode as `Unauthorized(string)`. Must fail.
-    func testDecodeRevertWithCustomErrorFailed() {
+    func testDecodeRevertWithCustomErrorFailed() throws {
         /// 82b42900 - Unauthorized() function selector
         /// 00000000000000000000000000000000000000000000000000000000 - padding bytes
         let errorResponse = Data.fromHex("82b4290000000000000000000000000000000000000000000000000000000000")!
@@ -147,7 +147,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
         XCTAssertEqual(errorData["_error"] as? String, "Unauthorized(string)")
         XCTAssertEqual(errorData["_parsingError"] as? String, "Data matches Unauthorized(string) but failed to be decoded.")
 
-        let decodedOutput = oneOutputFunction.decodeReturnData(errorResponse, errors: errors)
+        let decodedOutput = try oneOutputFunction.decodeReturnData(errorResponse)
 
         XCTAssertEqual(errorData["_success"] as? Bool, decodedOutput["_success"] as? Bool)
         XCTAssertEqual(errorData["_abortedByRevertOrRequire"] as? Bool, decodedOutput["_abortedByRevertOrRequire"] as? Bool)
@@ -157,7 +157,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
 
     /// Data is decoded as a call of `revert Unauthorized("Reason")`. Decoded only if custom error ABI is given.
     /// The custom error argument must be extractable by index and name if the name is available.
-    func testDecodeRevertWithCustomErrorWithArguments() {
+    func testDecodeRevertWithCustomErrorWithArguments() throws {
         /// 973d02cb  - `Unauthorized(string)` function selector
         /// 0000000000000000000000000000000000000000000000000000000000000020 - data offset
         /// 0000000000000000000000000000000000000000000000000000000000000006 - first custom argument length
@@ -176,7 +176,7 @@ class ABIElementErrorDecodingTest: XCTestCase {
         XCTAssertEqual(errorData["0"] as? String, "Reason")
         XCTAssertEqual(errorData["0"] as? String, errorData["message_arg"] as? String)
 
-        let decodedOutput = oneOutputFunction.decodeReturnData(errorResponse, errors: errors)
+        let decodedOutput = try oneOutputFunction.decodeReturnData(errorResponse)
 
         XCTAssertEqual(errorData["_success"] as? Bool, decodedOutput["_success"] as? Bool)
         XCTAssertEqual(errorData["_abortedByRevertOrRequire"] as? Bool, decodedOutput["_abortedByRevertOrRequire"] as? Bool)
