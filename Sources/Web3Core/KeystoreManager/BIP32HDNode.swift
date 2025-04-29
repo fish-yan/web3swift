@@ -70,16 +70,16 @@ public class HDNode {
         depth = UInt8(0)
     }
 
-    public convenience init?(_ serializedString: String) {
+    public convenience init?(_ serializedString: String, version: HDversion = HDversion()) {
         let data = Data(Base58.bytesFromBase58(serializedString))
-        self.init(data)
+        self.init(data, version: version)
     }
 
-    public init?(_ data: Data) {
+    public init?(_ data: Data, version: HDversion = HDversion()) {
         guard data.count == 82 else { return nil }
         let header = data[0..<4]
         var serializePrivate = false
-        if header == HDversion.privatePrefix {
+        if header == version.privatePrefix {
             serializePrivate = true
         }
         depth = data[4..<5].bytes[0]
